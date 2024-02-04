@@ -23,22 +23,22 @@ const updateContact = Joi.object({
     })
 });
 
-const validate = (schema, body, next) => {
-    const { error } = schema.validate(body);
+module.exports.contactValidator = (req, res, next) => {
+    const { error } = contactValidator.validate(req.body);
     if (error) {
-        const [{ message }] = error.details;
-        return next({
-            status: 400,
-            message: `Field: ${message.replace(/"/g, '')}`
-        });
+        return res.status(400).json({ message: "missing required fields" });
     }
     next();
 };
 
-module.exports.contactValidator = (req, res, next) => {
-    return validate(contactValidator, req.body, next);
-};
-
 module.exports.contactUpdateValidator = (req, res, next) => {
-    return validate(updateContact, req.body, next);
+    const { error } = updateContact.validate(req.body);
+    if (!req.body || Object.keys(req.body).length === 0) {
+        return res.status(400).json({ message: "missing fields" });
+    }
+    if (error) {
+        const [{ message }] = error.details;
+        return res.status(400).json({ message: message });
+    }
+    next();
 };
