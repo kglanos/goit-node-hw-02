@@ -10,6 +10,7 @@ const contactValidator = Joi.object({
         .message({"string.pattern.base": `Phone number must be written as 777-777-777.`,
     })
     .required(),
+    favorite: Joi.boolean()
 });
 
 const updateContact = Joi.object({
@@ -20,7 +21,8 @@ const updateContact = Joi.object({
     phone: Joi.string()
         .regex(/^\d{3}-\d{3}-\d{3}$/)
         .message({"string.pattern.base": `Phone number must be written as 777-777-777.`,
-    })
+    }),
+    favorite: Joi.boolean()
 });
 
 module.exports.contactValidator = (req, res, next) => {
