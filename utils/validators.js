@@ -25,6 +25,32 @@ const updateContact = Joi.object({
     favorite: Joi.boolean()
 });
 
+const signupAndLoginValidation = Joi.object({
+    password: Joi.string()
+        .min(8).required()
+        .max(30).required()
+        .required()
+        .pattern(/^(?=.*[a-z])(?=.*[A-Z]).{8,30}$/)
+        .messages({
+            "string.min": "Password must be at least 8 characters",
+            "string.max": "Password must not be more than 30 characters",
+            "string.pattern.base":
+            "Password must contain at least one uppercase letter and one lowercase letter",
+        }),
+    email: Joi.string().email().required().messages({
+        "string.email": "Please enter a valid email address",
+    }),
+});
+
+module.exports.signupAndLoginValidation = (req, res, next) => {
+    const { error } = signupAndLoginValidation.validate(req.body);
+    if (error) {
+        const [{ message }] = error.details;
+        return res.status(400).json({ message: message });
+    }
+    next();
+};
+
 module.exports.contactValidator = (req, res, next) => {
     const { error } = contactValidator.validate(req.body);
     if (error) {
