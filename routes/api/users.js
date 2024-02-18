@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../../services/schemas/userSchema');
+const { User } = require('../../services/schemas/userSchema');
 const { validationResult } = require('express-validator');
 const verifyToken = require('../../middlewares/auth');
 const { signup, login } = require('../../services/usersService')
@@ -77,8 +77,8 @@ router.post('/login', signupAndLoginValidation, async (req, res) => {
 
 router.get('/logout', verifyToken, async (req, res) => {
     try {
-        const _id = req.user;
-        const user = await User.findById(_id);
+        const userId = req.user._id;
+        const user = await User.findById(userId);
         if (!user) {
             return res.status(401).json({ message: "Not authorized" });
         }
