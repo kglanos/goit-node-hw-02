@@ -18,7 +18,7 @@ router.post('/signup', signupAndLoginValidation, async (req, res, next) => {
     const { email, password, subscription } = req.body;
 
     try {
-        let user = await login(email);
+        let user = await getUserByEmail(email);
 
         if (user) {
             return res.status(409).json({ message: 'Email in use' });
