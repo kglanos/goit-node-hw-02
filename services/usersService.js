@@ -1,4 +1,4 @@
-const User = require('../services/schemas/userSchema');
+const { User } = require('../services/schemas/userSchema');
 
 const signup = async (body) => {
     try {
@@ -13,7 +13,7 @@ const signup = async (body) => {
     }
 };
 
-const login = async (email) => {
+const getUserByEmail = async (email) => {
     try {
         const user = await User.findOne({ email });
         return user;
@@ -26,5 +26,5 @@ const login = async (email) => {
 
 module.exports = {
     signup,
-    login,
+    getUserByEmail,
 }

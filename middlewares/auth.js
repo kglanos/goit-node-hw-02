@@ -1,29 +1,33 @@
 const jwt = require("jsonwebtoken");
-const { User } = require("../services/schemas/userSchema"); // fix import this is default
+const { User } = require("../services/schemas/userSchema");
 require("dotenv").config();
 
 const verifyToken = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
 
+        console.log("Authorization header:", authHeader);
+
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res.status(401).json({ message: "Not authorized" }); // change message 
+            return res.status(401).json({ message: "Authorization header missing or invalid" });  
         }
 
         const token = authHeader.split(" ")[1];
 
-        const verify = jwt.verify(token, process.env.JWT_SECRET);
-        console.log(verify); // verify.user.id
-        const user = await User.findOne({ _id: verify.id });
+        const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+        const userId = decodedToken.id;
+
+        const user = await User.findOne({ _id: userId });
 
         if (!user || user.token !== token) {
-        return res.status(401).json({ message: "Not authorized" });
+            return res.status(401).json({ message: "Not authorized" });
         }
+
         req.user = user;
         next();
-        } catch (error) {
-            console.log(error); // always console log error 
-        return res.status(401).json({ message: "Not authorized" }); // change massage
+    } catch (error) {
+        console.log(error); 
+        return res.status(401).json({ message: "Error authorized"});
     }
 };
 

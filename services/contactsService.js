@@ -11,11 +11,11 @@ const listContacts = async (ownerId) => {
 
 const getContactById = async (contactId, ownerId) => {
   try {
-      const contact = await Contact.findById({
+      const contactToFindById = await Contact.findById({
         _id: contactId,
         owner: ownerId,
       });
-      return contact;
+      return contactToFindById;
   } catch (error) {
       console.error(error);
   }
@@ -23,11 +23,11 @@ const getContactById = async (contactId, ownerId) => {
 
 const removeContact = async (contactId, ownerId) => {
   try {
-      const contact = await Contact.deleteOne({ 
+      const contactToRemove = await Contact.deleteOne({ 
         _id: contactId,
         owner: ownerId,
       });
-      return contact;
+      return contactToRemove;
   } catch (error) {
       console.error(error);
   }
@@ -36,7 +36,7 @@ const removeContact = async (contactId, ownerId) => {
 const addContact = async (body, ownerId) => {
   try {
       const newContact = await Contact.create({
-        body,
+        ...body,
         owner: ownerId,
       });
       return newContact;
@@ -47,13 +47,27 @@ const addContact = async (body, ownerId) => {
 
 const updateContact = async (contactId, body, ownerId) => {
   try {
-      const updatedContact = await Contact.findByIdAndUpdate(
-        {_id: contactId, owner: ownerId},
-        { favorite: body.favorite },
-        { new: true });
-      return updatedContact;
+    const contactToUpdate = await Contact.findByIdAndUpdate(
+      { _id: contactId, owner: ownerId },
+      body,
+      { new: true }
+    );
+    return contactToUpdate;
   } catch (error) {
-      console.error(error);
+    console.error("Updating contact error:", error.message);
+  }
+};
+
+const updateStatusContact = async (contactId, body, ownerId) => {
+  try {
+    const contactToUpdate = await Contact.findByIdAndUpdate(
+      { _id: contactId, owner: ownerId },
+      { favorite: body.favorite },
+      { new: true }
+    );
+    return contactToUpdate;
+  } catch (error) {
+    console.error("Updating contact error:", error.message);
   }
 };
 
@@ -64,4 +78,5 @@ module.exports = {
   removeContact,
   addContact,
   updateContact,
+  updateStatusContact,
 }

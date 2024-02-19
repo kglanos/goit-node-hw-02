@@ -33,4 +33,4 @@ user.methods.validPassword = function(password) {
 
 const User = mongoose.model('user', user);
 
-module.exports = User;
+module.exports = { User };
