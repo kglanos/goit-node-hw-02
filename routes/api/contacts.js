@@ -55,15 +55,22 @@ router.patch('/:contactId/favorite', async (req, res, next) => {
   const { contactId } = req.params;
   const { favorite } = req.body;
 
-  if (!favorite) {
-      return res.status(400).json({ message: "missing field favorite" });
+  if (favorite === undefined || favorite === null) {
+    return res.status(400).json({ message: "missing field favorite" });
   }
 
   try {
-    const updatedContact = await Contact.updateContact(contactId, { favorite });
+    const updatedContact = await Contact.findByIdAndUpdate(
+      contactId,
+      { favorite },
+      { new: true }
+    );
 
-    if (updatedContact) return res.status(200).json(updatedContact);
+    if (updatedContact) {
+      return res.status(200).json(updatedContact);
+    } else {
       return res.status(404).json({ message: "Not found" });
+    }
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal Server Error" });
