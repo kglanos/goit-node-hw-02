@@ -5,11 +5,13 @@ const jwt = require('jsonwebtoken');
 const jimp = require('jimp');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs/promises');
 const { User } = require('../../services/schemas/userSchema');
 const { validationResult } = require('express-validator');
 const verifyToken = require('../../middlewares/auth');
 const { signup, getUserByEmail } = require('../../services/usersService')
 const { signupAndLoginValidation } = require('../../utils/validators');
+
 
 
 router.post('/signup', signupAndLoginValidation, async (req, res, next) => {
@@ -117,19 +119,26 @@ const upload = multer({ storage: storage });
 
 router.patch('/avatars', verifyToken, upload.single('avatar'), async (req, res) => {
     try {
+        if (!req.file) {
+            return res.status(400).json({ message: "No file uploaded" });
+        }
         const userId = req.user.id;
         const file = req.file;
-        const img = await jimp.read(file.path);
-        await img
+        const image = await jimp.read(file.path);
+        await image
             .autocrop()
             .cover(250, 250, jimp.HORIZONTAL_ALIGN_CENTER | jimp.VERTICAL_ALIGN_MIDDLE)
             .writeAsync(file.path);
-        const avatarUrl = file.path;
-        const updatedUser = await User.findOneAndUpdate(
-            { _id: userId },
-            { $set: { avatarUrl }},
-            { new: true }
-        );
+        
+        const avatarFileName = `${userId}-${Date.now()}${path.extname(file.originalname)}`;
+        const sourcePath = file.path;
+        const targetPath = path.join(__dirname, '..', '..', 'public', 'avatars', file.filename);
+        await fs.rename(sourcePath, targetPath);
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId, 
+            { avatarUrl: `/avatars/${avatarFileName}` }, 
+            { new: true });
         if (!updatedUser) {
             return res.status(401).json({ message: "Not authorized" });
         }
@@ -138,6 +147,5 @@ router.patch('/avatars', verifyToken, upload.single('avatar'), async (req, res) 
         res.status(500).json({ message: "Server error" });
     }
 });
-
 
 module.exports = router;
