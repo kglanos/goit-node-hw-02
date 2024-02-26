@@ -2,11 +2,16 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const jimp = require('jimp');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs/promises');
 const { User } = require('../../services/schemas/userSchema');
 const { validationResult } = require('express-validator');
 const verifyToken = require('../../middlewares/auth');
 const { signup, getUserByEmail } = require('../../services/usersService')
 const { signupAndLoginValidation } = require('../../utils/validators');
+
 
 
 router.post('/signup', signupAndLoginValidation, async (req, res, next) => {
@@ -19,10 +24,10 @@ router.post('/signup', signupAndLoginValidation, async (req, res, next) => {
             return res.status(409).json({ message: 'Email in use' });
         }
 
-        user = await signup({ email, password, subscription });
+        user = await signup({ email, password, subscription, avatarUrl: null});
 
         return res.status(201).json({
-            user: { email: user.email, subscription: user.subscription }
+            user: { email: user.email, subscription: user.subscription, avatarUrl: user.avatarUrl}
         });
     } catch (error) {
         console.error(error.message);
@@ -94,6 +99,50 @@ router.get('/current', verifyToken, async (req, res) => {
             email: user.email,
             subscription: user.subscription,
         });
+    } catch (error) {
+        res.status(500).json({ message: "Server error" });
+    }
+});
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'tmp/avatars');
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const extension = path.extname(file.originalname);
+        cb(null, file.fieldname + '-' + uniqueSuffix + extension);
+    }
+});
+
+const upload = multer({ storage: storage });
+
+router.patch('/avatars', verifyToken, upload.single('avatar'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: "No file uploaded" });
+        }
+        const userId = req.user.id;
+        const file = req.file;
+        const image = await jimp.read(file.path);
+        await image
+            .autocrop()
+            .cover(250, 250, jimp.HORIZONTAL_ALIGN_CENTER | jimp.VERTICAL_ALIGN_MIDDLE)
+            .writeAsync(file.path);
+        
+        const avatarFileName = `${userId}-${Date.now()}${path.extname(file.originalname)}`;
+        const sourcePath = file.path;
+        const targetPath = path.join(__dirname, '..', '..', 'public', 'avatars', file.filename);
+        await fs.rename(sourcePath, targetPath);
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId, 
+            { avatarUrl: `/avatars/${avatarFileName}` }, 
+            { new: true });
+        if (!updatedUser) {
+            return res.status(401).json({ message: "Not authorized" });
+        }
+        res.status(200).json({ avatarUrl: updatedUser.avatarUrl });
     } catch (error) {
         res.status(500).json({ message: "Server error" });
     }

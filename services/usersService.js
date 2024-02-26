@@ -1,8 +1,23 @@
 const { User } = require('../services/schemas/userSchema');
+const gravatar = require('gravatar');
 
 const signup = async (body) => {
     try {
-        const newUser = new User(body);
+        const { email, password, subscription } = body;
+
+        const avatarUrl = gravatar.url(email, { 
+            protocol: 
+            'https', 
+            s: '200', 
+            r: 'pg', 
+            d: '404'
+        });
+
+        const newUser = new User({ 
+            email, 
+            password, 
+            subscription, 
+            avatarUrl });
         await newUser.setPassword(body.password);
         await newUser.save();
         return newUser;
