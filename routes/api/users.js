@@ -161,7 +161,6 @@ router.get('/verify/:verificationToken', async (req, res) => {
         }
 
         user.verify = true;
-        user.verificationToken = null;
         await user.save();
 
         const newVerificationToken = generateNewVerificationToken();
