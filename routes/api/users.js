@@ -15,7 +15,6 @@ const { generateNewVerificationToken } = require('../../helpers');
 const { sendVerificationEmail } = require('../../helpers/sendEmail');
 
 
-
 router.post('/signup', signupAndLoginValidation, async (req, res, next) => {
     const { email, password, subscription } = req.body;
 
@@ -29,7 +28,7 @@ router.post('/signup', signupAndLoginValidation, async (req, res, next) => {
         user = await signup({ email, password, subscription, avatarUrl: null});
 
         await sendVerificationEmail(email, user.verificationToken);
-        
+
         return res.status(201).json({
             user: { email: user.email, subscription: user.subscription, avatarUrl: user.avatarUrl}
         });

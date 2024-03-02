@@ -3,9 +3,9 @@ const Mailgun = require('mailgun.js');
 const mailgun = new Mailgun(formData);
 const mg = mailgun.client({username: 'api', key: process.env.MAILGUN_API_KEY || process.env.MAILGUN_Key});
 
-const sendVerificationEmail = async ( newVerificationToken) => {
+const sendVerificationEmail = async ( email, newVerificationToken) => {
     const messageData = {
-        from: "User Karol <mailgun@sandbox-123.mailgun.org>",
+        from: "User Karol <mailgun@sandbox84319c826e14409aaa2c744c6da23d3e.mailgun.org>",
         to: ["k.glanowski@wp.pl"],
         subject: "Verification Email",
         text: `Your new verification token is: ${newVerificationToken}`,
@@ -13,7 +13,7 @@ const sendVerificationEmail = async ( newVerificationToken) => {
     };
 
     try {
-        const msg = await mg.messages.create('sandbox-123.mailgun.org', messageData);
+        const msg = await mg.messages.create('sandbox84319c826e14409aaa2c744c6da23d3e.mailgun.org', messageData);
         console.log("Email sent:", msg);
         return msg;
     } catch (err) {

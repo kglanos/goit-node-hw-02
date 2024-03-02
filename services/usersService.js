@@ -1,4 +1,4 @@
-const { generateNewVerificationToken } = require('../helpers');
+const { generateNewVerificationToken } = require('../helpers/index');
 const { User } = require('../services/schemas/userSchema');
 const gravatar = require('gravatar');
 
