@@ -9,8 +9,10 @@ const fs = require('fs/promises');
 const { User } = require('../../services/schemas/userSchema');
 const { validationResult } = require('express-validator');
 const verifyToken = require('../../middlewares/auth');
-const { signup, getUserByEmail } = require('../../services/usersService')
+const { signup, getUserByEmail, updateUserVerification } = require('../../services/usersService')
 const { signupAndLoginValidation } = require('../../utils/validators');
+const { generateNewVerificationToken } = require('../../helpers');
+const { sendVerificationEmail } = require('../../helpers/sendEmail');
 
 
 
@@ -26,6 +28,8 @@ router.post('/signup', signupAndLoginValidation, async (req, res, next) => {
 
         user = await signup({ email, password, subscription, avatarUrl: null});
 
+        await sendVerificationEmail(email, user.verificationToken);
+        
         return res.status(201).json({
             user: { email: user.email, subscription: user.subscription, avatarUrl: user.avatarUrl}
         });
@@ -144,6 +148,59 @@ router.patch('/avatars', verifyToken, upload.single('avatar'), async (req, res) 
         }
         res.status(200).json({ avatarUrl: updatedUser.avatarUrl });
     } catch (error) {
+        res.status(500).json({ message: "Server error" });
+    }
+});
+
+router.get('/verify/:verificationToken', async (req, res) => {
+    const { verificationToken } = req.params;
+    try {
+        const user = await User.findOne({ verificationToken });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        user.verify = true;
+        user.verificationToken = null;
+        await user.save();
+
+        const newVerificationToken = generateNewVerificationToken();
+        await sendVerificationEmail(user.email, newVerificationToken);
+
+        return res.status(200).json({ message: "Verification successful" });
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ message: "Server error" });
+    }
+});
+
+router.post('/verify', async (req, res) => {
+    const { email } = req.body;
+    
+    if (!email) {
+        return res.status(400).json({ message: "missing required field email" });
+    }
+
+    try {
+        const user = await getUserByEmail(email);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        if (user.verify) {
+            return res.status(400).json({ message: "Verification has already been passed" });
+        }
+
+        const newVerificationToken = generateNewVerificationToken();
+
+        await updateUserVerification( email, newVerificationToken);
+
+        await sendVerificationEmail(email, newVerificationToken);
+
+        return res.status(200).json({ message: "Verification email sent" });
+    } catch (error) {
+        console.error(error.message);
         res.status(500).json({ message: "Server error" });
     }
 });
